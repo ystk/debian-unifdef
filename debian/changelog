@@ -1,0 +1,117 @@
+unifdef (2.3-1) unstable; urgency=low
+
+  * New upstream version.
+  * Correct unifdefall's exit status if the cleanup rm fails.
+  * Man page updates.
+
+ -- Bob Proulx <bob@proulx.com>  Sat, 03 Apr 2010 01:00:39 -0600
+
+unifdef (2.1-1) unstable; urgency=low
+
+  * New upstream version.
+  * unifdef gains embedded version information plus -V to display it.
+
+ -- Bob Proulx <bob@proulx.com>  Fri, 12 Mar 2010 20:38:33 -0700
+
+unifdef (1.357-1) unstable; urgency=low
+
+  * New upstream version.
+  * Fix copyright file snafu.  With thanks to Jonathan Nieder.
+    (Closes: 572648)
+  * Upstream licensing of files simplified and converged to the one
+    project global 2-clause license leaving only the unifdefall file with
+    the legacy 3-clause license.  Much simpler.
+  * Upstream now includes an explicit COPYING file with license details.
+  * Removed Debian patch for man page formating.  Fixed upstream.
+
+ -- Bob Proulx <bob@proulx.com>  Mon, 08 Mar 2010 23:32:38 -0700
+
+unifdef (1.353-1) unstable; urgency=low
+
+  * New upstream version.
+  * Track distribution file name changes.
+
+ -- Bob Proulx <bob@proulx.com>  Wed, 24 Feb 2010 16:37:07 -0700
+
+unifdef (1.352-1) unstable; urgency=low
+
+  * New upstream version.  (Closes: 557649)
+  * The upstream maintainer is now releasing standalone distributions.
+    This package switches to the new distribution bundle.
+  * Switch to dpkg-source 3.0 (quilt) format.
+
+ -- Bob Proulx <bob@proulx.com>  Sat, 20 Feb 2010 22:31:47 -0700
+
+unifdef (1.0+20080502-1) unstable; urgency=low
+
+  * Sync with latest FreeBSD version of unifdef.  This is effectively a
+    new upstream version.
+  * Include upstream unifdefall script to remove all ifdefs.  This adds a
+    dependency upon 'cpp'.  (Closes: #406880)
+  * Don't require at least one symbol when using -k.  (Closes: #401182)
+  
+ -- Bob Proulx <bob@proulx.com>  Sun, 01 Nov 2009 01:16:17 -0700
+
+unifdef (1.0+20030701-3) unstable; urgency=low
+
+  * Acknowledge QA upload.
+  * Retain as maintainer.  (Closes: #553462)
+  * Merge QA NMU with maintainer version.
+  * Remove unneeded actions in configure target.
+  * Fix FTBFS due to libc addition of conflicting symbol 'getline'.
+    (Closes: #552879)
+  * Increase debhelper compat level to 7.
+  * Increase standards conformance version to 3.8.3.
+  * Appease lintian warning about ignoring make clean return status by no
+    longer ignoring it.
+  * Original version: 1.0+20030701-2
+  * Original date: Fri, 30 Oct 2009 11:33:33 -0600
+  
+ -- Bob Proulx <bob@proulx.com>  Sat, 31 Oct 2009 11:11:15 -0400
+
+unifdef (1.0+20030701-2) unstable; urgency=low
+
+  * QA upload.
+    + Set maintainer to Debian QA Group <packages@qa.debian.org>.
+  * Rename local getline func to local_getline in unifdef.c. (Closes: #552879).
+  * Make clean not ignore errors.
+  * Bump debhelper build-dep to 5.
+  * Move DH_COMPAT from rules to compat and set to 5.
+  * Bump Standards Version to 3.8.3.
+
+ -- Barry deFreese <bdefreese@debian.org>  Sat, 31 Oct 2009 11:11:14 -0400
+
+unifdef (1.0+20030701-2~1) unstable; urgency=low
+
+  * Fix FTBFS due to libc addition of conflicting symbol 'getline'.
+    (Closes: #552879)
+  * Increase debhelper compat level to 7.
+  * Increase standards conformance version to 3.8.3.
+  * Appease lintian warning about ignoring make clean return status by no
+    longer ignoring it.
+  
+ -- Bob Proulx <bob@proulx.com>  Fri, 30 Oct 2009 11:33:33 -0600
+
+unifdef (1.0+20030701-1) unstable; urgency=low
+
+  * Switch to current FreeBSD version of unifdef.  This is effectively a
+    switch to a new upstream version.  Really it is switching to a
+    different branching of the original code base.
+  * Suggestion to switch to the newer FreeBSD version. (Closes: #234054)
+  * Whitespace is now allowed at the beginning of #if line before the '#'
+    character.  (Closes: #204349)
+  * Whitespace is now generally ignored around the preprocessor
+    directives.  This allows indention of preprocessor control flow.
+  * Previously only "#ifdef" and "#ifndef" preprocessor controls were
+    handled giving the program the justifiable name of "unifdef".  Now
+    general "#if" processing such as "#if defined(FOO)" and boolean
+    expresions of those constructs are allowed.
+
+ -- Bob Proulx <bob@proulx.com>  Sat,  3 Jul 2004 18:09:39 -0600
+
+unifdef (1.0-1) unstable; urgency=low
+
+  * First Debian packaging.
+
+ -- Bob Proulx <bob@proulx.com>  Wed, 26 Feb 2003 10:49:15 -0700
+
