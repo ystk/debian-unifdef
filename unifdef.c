@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002 - 2010 Tony Finch <dot@dotat.at>
+ * Copyright (c) 2002 - 2011 Tony Finch <dot@dotat.at>
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -312,6 +312,8 @@ main(int argc, char *argv[])
 	argv += optind;
 	if (compblank && lnblank)
 		errx(2, "-B and -b are mutually exclusive");
+	if (symlist && ofilename != NULL)
+		errx(2, "-s and -o are mutually exclusive");
 	if (argc > 1) {
 		errx(2, "can only do one file");
 	} else if (argc == 1 && strcmp(*argv, "-") != 0) {
@@ -328,16 +330,10 @@ main(int argc, char *argv[])
 		output = stdout;
 	} else {
 		struct stat ist, ost;
-		memset(&ist, 0, sizeof(ist));
-		memset(&ost, 0, sizeof(ost));
-
-		if (fstat(fileno(input), &ist) != 0)
-			err(2, "can't fstat %s", filename);
-		if (stat(ofilename, &ost) != 0 && errno != ENOENT)
-			warn("can't stat %s", ofilename);
-
-		overwriting = (ist.st_dev == ost.st_dev
-		            && ist.st_ino == ost.st_ino);
+		if (stat(ofilename, &ost) == 0 &&
+		    fstat(fileno(input), &ist) == 0)
+			overwriting = (ist.st_dev == ost.st_dev
+				    && ist.st_ino == ost.st_ino);
 		if (overwriting) {
 			const char *dirsep;
 			int ofd;
@@ -401,7 +397,8 @@ usage(void)
  * When we have processed a group that starts off with a known-false
  * #if/#elif sequence (which has therefore been deleted) followed by a
  * #elif that we don't understand and therefore must keep, we edit the
- * latter into a #if to keep the nesting correct.
+ * latter into a #if to keep the nesting correct. We use strncpy() to
+ * overwrite the 4 byte token "elif" with "if  " without a '\0' byte.
  *
  * When we find a true #elif in a group, the following block will
  * always be kept and the rest of the sequence after the next #elif or
@@ -454,7 +451,7 @@ static void Oelif (void) { if (!iocccok) Eioccc(); Pelif(); }
 static void Idrop (void) { Fdrop();  ignoreon(); }
 static void Itrue (void) { Ftrue();  ignoreon(); }
 static void Ifalse(void) { Ffalse(); ignoreon(); }
-/* edit this line */
+/* modify this line */
 static void Mpass (void) { strncpy(keyword, "if  ", 4); Pelif(); }
 static void Mtrue (void) { keywordedit("else");  state(IS_TRUE_MIDDLE); }
 static void Melif (void) { keywordedit("endif"); state(IS_FALSE_TRAILER); }
@@ -553,6 +550,7 @@ state(Ifstate is)
 
 /*
  * Write a line to the output or not, according to command line options.
+ * If writing fails, closeout() will print the error and exit.
  */
 static void
 flushline(bool keep)
@@ -565,21 +563,23 @@ flushline(bool keep)
 			delcount += 1;
 			blankcount += 1;
 		} else {
-			if (lnnum && delcount > 0)
-				printf("#line %d%s", linenum, newline);
-			fputs(tline, output);
+			if (lnnum && delcount > 0 &&
+			    fprintf(output, "#line %d%s", linenum, newline) < 0)
+				closeout();
+			if (fputs(tline, output) == EOF)
+				closeout();
 			delcount = 0;
 			blankmax = blankcount = blankline ? blankcount + 1 : 0;
 		}
 	} else {
-		if (lnblank)
-			fputs(newline, output);
+		if (lnblank && fputs(newline, output) == EOF)
+			closeout();
 		exitstat = 1;
 		delcount += 1;
 		blankcount = 0;
 	}
-	if (debugging)
-		fflush(output);
+	if (debugging && fflush(output) == EOF)
+		closeout();
 }
 
 /*
@@ -608,13 +608,13 @@ closeout(void)
 {
 	if (symdepth && !zerosyms)
 		printf("\n");
-	if (fclose(output) == EOF) {
-		warn("couldn't write to %s", ofilename);
+	if (ferror(output) || fclose(output) == EOF) {
 		if (overwriting) {
+			warn("couldn't write to temporary file");
 			unlink(tempname);
-			errx(2, "%s unchanged", filename);
+			errx(2, "%s unchanged", ofilename);
 		} else {
-			exit(2);
+			err(2, "couldn't write to %s", ofilename);
 		}
 	}
 }
@@ -628,10 +628,10 @@ done(void)
 	if (incomment)
 		error("EOF in comment");
 	closeout();
-	if (overwriting && rename(tempname, filename) == -1) {
+	if (overwriting && rename(tempname, ofilename) == -1) {
 		warn("couldn't rename temporary file");
 		unlink(tempname);
-		errx(2, "%s unchanged", filename);
+		errx(2, "%s unchanged", ofilename);
 	}
 	exit(exitstat);
 }
@@ -651,8 +651,12 @@ parseline(void)
 	Comment_state wascomment;
 
 	linenum++;
-	if (fgets(tline, MAXLINE, input) == NULL)
-		return (LT_EOF);
+	if (fgets(tline, MAXLINE, input) == NULL) {
+		if (ferror(input))
+			error(strerror(errno));
+		else
+			return (LT_EOF);
+	}
 	if (newline == NULL) {
 		if (strrchr(tline, '\n') == strrchr(tline, '\r') + 1)
 			newline = newline_crlf;
@@ -726,7 +730,9 @@ parseline(void)
 		if (linestate == LS_HASH) {
 			size_t len = cp - tline;
 			if (fgets(tline + len, MAXLINE - len, input) == NULL) {
-				/* append the missing newline */
+				if (ferror(input))
+					error(strerror(errno));
+				/* append the missing newline at eof */
 				strcpy(tline + len, newline);
 				cp += strlen(newline);
 				linestate = LS_START;

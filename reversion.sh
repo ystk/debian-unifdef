@@ -2,18 +2,18 @@
 
 [ ! -f version.sh ] && [ ! -d .git ] && exit 1
 
-[ -f version.sh ] && . version.sh
+[ -f version.sh ] && . ./version.sh
 
 if [ -d .git ]
 then
-	GV=$(git describe --abbrev=4)
+	GV=$(git describe | sed 's|-g*|.|g;s|[.]|-|')
 	git update-index -q --refresh
 	if git diff-index --quiet HEAD
 	then
 		GD="$(git show --pretty=format:%ai --quiet HEAD)"
 	else
 		GD="$(date +'%Y-%m-%d %H:%M:%S %z')"
-		GV=$GV-dirty
+		GV=$GV.XX
 	fi
 	if [ "$GV $GD" != "$V $D" ]
 	then
