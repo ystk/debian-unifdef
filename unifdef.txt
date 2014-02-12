@@ -72,7 +72,7 @@ OPTIONS
              complemented, i.e., the lines that would have been removed or
              blanked are retained and vice versa.
 
-     -d      Turn on printing of degugging messages.
+     -d      Turn on printing of debugging messages.
 
      -e      Because unifdef processes its input one line at a time, it cannot
              remove preprocessor directives that span more than one line.  The
@@ -177,4 +177,4 @@ BUGS
      The text-mode and ignore functionality does not correspond to modern
      cpp(1) behaviour.
 
-                                March 11, 2010
+                               January 18, 2011

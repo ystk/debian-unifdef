@@ -30,10 +30,11 @@ install: unifdef unifdefall.sh unifdef.1
 	ln -s unifdef.1  ${man1dest}/unifdefall.1
 
 clean:
-	rm -f unifdef unifdef.txt version.h
+	rm -f unifdef version.h
 	rm -f tests/*.out tests/*.err tests/*.rc
 
 realclean: clean
+	rm -f unifdef.txt
 	[ ! -d .git ] || rm -f Changelog version.sh
 	find . -name .git -prune -o \( \
 		-name '*~' -o -name '.#*' -o \
@@ -62,23 +63,13 @@ release: version.sh unifdef.txt Changelog
 
 unifdef.txt: unifdef.1
 	nroff -Tascii -mdoc unifdef.1 | sed -e 's/.//g' >unifdef.txt
-	cp unifdef.txt web
 
 Changelog:
 	line="---------------------------------------------------"; \
-	git log --stat --pretty=format:"$$line%n%ai %an <%ae>%n%n%s%n%n%b" |\
+	git log --no-merges --stat --pretty=format:"$$line%n%ai %an <%ae>%n%n%s%n%n%b" |\
 	awk '/^$$/ { n++ } \
 	     /./ && !n { print } \
 	     /./ && n  { print ""; print; n=0 } \
-	     END { print "'$$line'" }' >Changelog
-
-upload:
-	git gc
-	git update-server-info
-	git push --all github
-	touch .git/git-daemon-export-ok
-	echo "selectively remove C preprocessor conditionals" >.git/description
-	rsync --delete --recursive --links .git/ chiark:public-git/unifdef.git/
-	rsync --delete --recursive --links  web/ chiark:public-html/prog/unifdef/
+	     END { print ""; print "'$$line'" }' >Changelog
 
 # eof

@@ -2,8 +2,8 @@ Source: unifdef
 Section: devel
 Priority: optional
 Maintainer: Bob Proulx <bob@proulx.com>
-Build-Depends: debhelper (>> 7.0.0)
-Standards-Version: 3.8.4
+Build-Depends: debhelper (>= 8.0.0)
+Standards-Version: 3.9.1
 Homepage: http://dotat.at/prog/unifdef/
 
 Package: unifdef

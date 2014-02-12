@@ -1,3 +1,26 @@
+unifdef (2.6-1) unstable; urgency=low
+
+  * New upstream release.
+  
+ -- Bob Proulx <bob@proulx.com>  Tue, 22 Feb 2011 21:31:52 -0700
+
+unifdef (2.5-1) unstable; urgency=low
+
+  * New upstream release.
+
+ -- Bob Proulx <bob@proulx.com>  Tue, 08 Feb 2011 14:32:07 -0700
+
+unifdef (2.4-1) experimental; urgency=low
+
+  * New upstream release.
+  * Minor spelling corrections in the documentation.
+  * Minor build updates in the Makefile.  This enables cleaning up the
+    Debian build rules somewhat.
+  * Increase debhelper compat level to 8.
+  * Increase standards conformance version to 3.9.1.
+
+ -- Bob Proulx <bob@proulx.com>  Wed, 14 Sep 2010 17:20:00 -0600
+
 unifdef (2.3-1) unstable; urgency=low
 
   * New upstream version.
