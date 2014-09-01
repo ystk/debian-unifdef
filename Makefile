@@ -8,16 +8,17 @@ man1dir=	${mandir}/man1
 bindest=	${DESTDIR}${bindir}
 man1dest=	${DESTDIR}${man1dir}
 
-
 all: unifdef
 
-unifdef: unifdef.c
-unifdef.c: version.h
-version.h version.sh::
-	./reversion.sh
+unifdef: unifdef.c unifdef.h version.h
+	${CC} ${CFLAGS} ${LDFLAGS} -o unifdef unifdef.c
+
+version.h: version.sh
+version.sh::
+	scripts/reversion.sh
 
 test: unifdef
-	./runtests.sh tests
+	scripts/runtests.sh tests
 
 install: unifdef unifdefall.sh unifdef.1
 	: commands
@@ -38,38 +39,20 @@ realclean: clean
 	[ ! -d .git ] || rm -f Changelog version.sh
 	find . -name .git -prune -o \( \
 		-name '*~' -o -name '.#*' -o \
-		-name '*.orig' -o -name '*.core' \
+		-name '*.orig' -o -name '*.core' -o \
+		-name 'xterm-*' -o -name 'xterm.tar.gz' \
 		\) -delete
 
-DISTFILES=             \
-	Changelog      \
-	COPYING        \
-	INSTALL        \
-	Makefile       \
-	README         \
-	reversion.sh   \
-	runtests.sh    \
-	tests          \
-	unifdef.c      \
-	unifdef.1      \
-	unifdef.txt    \
-	unifdefall.sh  \
-	version.sh
+DISTEXTRA= version.h version.sh unifdef.txt Changelog
 
-release: version.sh unifdef.txt Changelog
-	. version.sh; \
-	mkdir web/$$V; cp -R ${DISTFILES} web/$$V; \
-	cd web; tar cfz $$V.tar.gz $$V; rm -R $$V
+release: ${DISTEXTRA}
+	scripts/copycheck.sh
+	scripts/release.sh ${DISTEXTRA}
 
 unifdef.txt: unifdef.1
-	nroff -Tascii -mdoc unifdef.1 | sed -e 's/.//g' >unifdef.txt
+	nroff -Tascii -mdoc unifdef.1 | col -bx >unifdef.txt
 
-Changelog:
-	line="---------------------------------------------------"; \
-	git log --no-merges --stat --pretty=format:"$$line%n%ai %an <%ae>%n%n%s%n%n%b" |\
-	awk '/^$$/ { n++ } \
-	     /./ && !n { print } \
-	     /./ && n  { print ""; print; n=0 } \
-	     END { print ""; print "'$$line'" }' >Changelog
+Changelog: version.sh scripts/gitlog2changelog.sh
+	scripts/gitlog2changelog.sh >Changelog
 
 # eof
