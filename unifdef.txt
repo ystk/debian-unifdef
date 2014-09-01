@@ -4,8 +4,8 @@ NAME
      unifdef, unifdefall -- remove preprocessor conditionals from code
 
 SYNOPSIS
-     unifdef [-bBcdeKknsStV] [-Ipath] [-Dsym[=val]] [-Usym] [-iDsym[=val]]
-             [-iUsym] ... [-o outfile] [infile]
+     unifdef [-bBcdehKkmnsStV] [-Ipath] [-[i]Dsym[=val]] [-[i]Usym] ...
+             [-f defile] [-x {012}] [-M backext] [-o outfile] [infile ...]
      unifdefall [-Ipath] ... file
 
 DESCRIPTION
@@ -14,20 +14,20 @@ DESCRIPTION
      they specify should be removed, while otherwise leaving the file alone.
 
      The unifdef utility acts on #if, #ifdef, #ifndef, #elif, #else, and
-     #endif lines.  A directive is only processed if the symbols specified on
-     the command line are sufficient to allow unifdef to get a definite value
-     for its control expression.  If the result is false, the directive and
-     the following lines under its control are removed.  If the result is
-     true, only the directive is removed.  An #ifdef or #ifndef directive is
-     passed through unchanged if its controlling symbol is not specified on
-     the command line.  Any #if or #elif control expression that has an
-     unknown value or that unifdef cannot parse is passed through unchanged.
-     By default, unifdef ignores #if and #elif lines with constant expres-
-     sions; it can be told to process them by specifying the -k flag on the
-     command line.
+     #endif lines, using macros specified in -D and -U command line options or
+     in -f definitions files.  A directive is processed if the macro specifi-
+     cations are sufficient to provide a definite value for its control
+     expression.  If the result is false, the directive and the following
+     lines under its control are removed.  If the result is true, only the
+     directive is removed.  An #ifdef or #ifndef directive is passed through
+     unchanged if its controlling macro is not specified.  Any #if or #elif
+     control expression that has an unknown value or that unifdef cannot parse
+     is passed through unchanged.  By default, unifdef ignores #if and #elif
+     lines with constant expressions; it can be told to process them by speci-
+     fying the -k flag on the command line.
 
      It understands a commonly-used subset of the expression syntax for #if
-     and #elif lines: integer constants, integer values of symbols defined on
+     and #elif lines: integer constants, integer values of macros defined on
      the command line, the defined() operator, the operators !, <, >, <=, >=,
      ==, !=, &&, ||, and parenthesized expressions.  A kind of ``short
      circuit'' evaluation is used for the && operator: if either operand is
@@ -35,12 +35,19 @@ DESCRIPTION
      operand is unknown.  Similarly, if either operand of || is definitely
      true then the result is true.
 
-     In most cases, the unifdef utility does not distinguish between object-
-     like macros (without arguments) and function-like arguments (with argu-
-     ments).  If a macro is not explicitly defined, or is defined with the -D
-     flag on the command-line, its arguments are ignored.  If a macro is
-     explicitly undefined on the command line with the -U flag, it may not
-     have any arguments since this leads to a syntax error.
+     When evaluating an expression, unifdef does not expand macros first.  The
+     value of a macro must be a simple number, not an expression.  A limited
+     form of indirection is allowed, where one macro's value is the name of
+     another.
+
+     In most cases, unifdef does not distinguish between object-like macros
+     (without arguments) and function-like macros (with arguments).  A func-
+     tion-like macro invocation can appear in #if and #elif control expres-
+     sions.  If the macro is not explicitly defined, or is defined with the -D
+     flag on the command-line, or with #define in a -f definitions file, its
+     arguments are ignored.  If a macro is explicitly undefined on the command
+     line with the -U flag, or with #undef in a -f definitions file, it may
+     not have any arguments since this leads to a syntax error.
 
      The unifdef utility understands just enough about C to know when one of
      the directives is inactive because it is inside a comment, or affected by
@@ -49,18 +56,36 @@ DESCRIPTION
 
      A script called unifdefall can be used to remove all conditional cpp(1)
      directives from a file.  It uses unifdef -s and cpp -dM to get lists of
-     all the controlling symbols and their definitions (or lack thereof), then
+     all the controlling macros and their definitions (or lack thereof), then
      invokes unifdef with appropriate arguments to process the file.
 
 OPTIONS
      -Dsym=val
-             Specify that a symbol is defined to a given value which is used
-             when evaluating #if and #elif control expressions.
+             Specify that a macro is defined to a given value.
 
-     -Dsym   Specify that a symbol is defined to the value 1.
+     -Dsym   Specify that a macro is defined to the value 1.
 
-     -Usym   Specify that a symbol is undefined.  If the same symbol appears
-             in more than one argument, the last occurrence dominates.
+     -Usym   Specify that a macro is undefined.
+
+             If the same macro appears in more than one argument, the last
+             occurrence dominates.
+
+     -iDsym[=val]
+     -iUsym  C strings, comments, and line continuations are ignored within
+             #ifdef and #ifndef blocks controlled by macros specified with
+             these options.
+
+     -f defile
+             The file defile contains #define and #undef preprocessor direc-
+             tives, which have the same effect as the corresponding -D and -U
+             command-line arguments.  You can have multiple -f arguments and
+             mix them with -D and -U arguments; later options override earlier
+             ones.
+
+             Each directive must be on a single line.  Object-like macro defi-
+             nitions (without arguments) are set to the given value.  Func-
+             tion-like macro definitions (with arguments) are treated as if
+             they are set to 1.
 
      -b      Replace removed lines with blank lines instead of deleting them.
              Mutually exclusive with the -B option.
@@ -68,20 +93,21 @@ OPTIONS
      -B      Compress blank lines around a deleted section.  Mutually exclu-
              sive with the -b option.
 
-     -c      If the -c flag is specified, then the operation of unifdef is
-             complemented, i.e., the lines that would have been removed or
-             blanked are retained and vice versa.
+     -c      Complement, i.e., lines that would have been removed or blanked
+             are retained and vice versa.
 
      -d      Turn on printing of debugging messages.
 
-     -e      Because unifdef processes its input one line at a time, it cannot
-             remove preprocessor directives that span more than one line.  The
-             most common example of this is a directive with a multi-line com-
-             ment hanging off its right hand end.  By default, if unifdef has
-             to process such a directive, it will complain that the line is
-             too obfuscated.  The -e option changes the behaviour so that,
-             where possible, such lines are left unprocessed instead of
-             reporting an error.
+     -e      By default, unifdef will report an error if it needs to remove a
+             preprocessor directive that spans more than one line, for exam-
+             ple, if it has a multi-line comment hanging off its right hand
+             end.  The -e flag makes it ignore the line instead.
+
+     -h      Print help.
+
+     -Ipath  Specifies to unifdefall an additional place to look for #include
+             files.  This option is ignored by unifdef for compatibility with
+             cpp(1) and to simplify the implementation of unifdefall.
 
      -K      Always treat the result of && and || operators as unknown if
              either operand is unknown, instead of short-circuiting when
@@ -95,50 +121,60 @@ OPTIONS
              would be rude to strip them out, just as it would be for normal
              comments.
 
+     -m      Modify one or more input files in place.
+
+     -M backext
+             Modify input files in place, and keep backups of the original
+             files by appending the backext to the input filenames.
+
      -n      Add #line directives to the output following any deleted lines,
              so that errors produced when compiling the output file correspond
              to line numbers in the input file.
 
      -o outfile
-             Write output to the file outfile instead of the standard output.
-             If outfile is the same as the input file, the output is written
-             to a temporary file which is renamed into place when unifdef com-
-             pletes successfully.
+             Write output to the file outfile instead of the standard output
+             when processing a single file.
 
-     -s      Instead of processing the input file as usual, this option causes
-             unifdef to produce a list of symbols that appear in expressions
-             that unifdef understands.  It is useful in conjunction with the
-             -dM option of cpp(1) for creating unifdef command lines.
+     -s      Instead of processing an input file as usual, this option causes
+             unifdef to produce a list of macros that are used in preprocessor
+             directive controlling expressions.
 
-     -S      Like the -s option, but the nesting depth of each symbol is also
+     -S      Like the -s option, but the nesting depth of each macro is also
              printed.  This is useful for working out the number of possible
-             combinations of interdependent defined/undefined symbols.
+             combinations of interdependent defined/undefined macros.
 
-     -t      Disables parsing for C comments and line continuations, which is
-             useful for plain text.
-
-     -iDsym[=val]
-     -iUsym  Ignore #ifdefs.  If your C code uses #ifdefs to delimit non-C
-             lines, such as comments or code which is under construction, then
-             you must tell unifdef which symbols are used for that purpose so
-             that it will not try to parse comments and line continuations
-             inside those #ifdefs.  You can specify ignored symbols with
-             -iDsym[=val] and -iUsym similar to -Dsym[=val] and -Usym above.
-
-     -Ipath  Specifies to unifdefall an additional place to look for #include
-             files.  This option is ignored by unifdef for compatibility with
-             cpp(1) and to simplify the implementation of unifdefall.
+     -t      Disables parsing for C strings, comments, and line continuations,
+             which is useful for plain text.  This is a blanket version of the
+             -iD and -iU flags.
 
      -V      Print version details.
 
-     The unifdef utility copies its output to stdout and will take its input
-     from stdin if no file argument is given.
+     -x {012}
+             Set exit status mode to zero, one, or two.  See the EXIT STATUS
+             section below for details.
+
+     The unifdef utility takes its input from stdin if there are no file argu-
+     ments.  You must use the -m or -M options if there are multiple input
+     files.  You can specify inut from stdin or output to stdout with `-'.
 
      The unifdef utility works nicely with the -Dsym option of diff(1).
 
 EXIT STATUS
-     The unifdef utility exits 0 if the output is an exact copy of the input,
-     1 if not, and 2 if in trouble.
+     In normal usage the unifdef utility's exit status depends on the mode set
+     using the -x option.
+
+     If the exit mode is zero (the default) then unifdef exits with status 0
+     if the output is an exact copy of the input, or with status 1 if the out-
+     put differs.
+
+     If the exit mode is one, unifdef exits with status 1 if the output is
+     unmodified or 0 if it differs.
+
+     If the exit mode is two, unifdef exits with status zero in both cases.
+
+     In all exit modes, unifdef exits with status 2 if there is an error.
+
+     The exit status is 0 if the -h or -V command line options are given.
 
 DIAGNOSTICS
      Too many levels of nesting.
@@ -154,6 +190,8 @@ DIAGNOSTICS
 SEE ALSO
      cpp(1), diff(1)
 
+     The unifdef home page is http://dotat.at/prog/unifdef
+
 HISTORY
      The unifdef command appeared in 2.9BSD.  ANSI C support was added in
      FreeBSD 4.7.
@@ -165,16 +203,16 @@ AUTHORS
 BUGS
      Expression evaluation is very limited.
 
-     Preprocessor control lines split across more than one physical line
-     (because of comments or backslash-newline) cannot be handled in every
-     situation.
+     Handling one line at a time means preprocessor directives split across
+     more than one physical line (because of comments or backslash-newline)
+     cannot be handled in every situation.
 
      Trigraphs are not recognized.
 
-     There is no support for symbols with different definitions at different
+     There is no support for macros with different definitions at different
      points in the source file.
 
      The text-mode and ignore functionality does not correspond to modern
      cpp(1) behaviour.
 
-                               January 18, 2011
+                                January 7, 2014

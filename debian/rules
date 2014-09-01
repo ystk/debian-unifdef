@@ -1,47 +1,32 @@
 #!/usr/bin/make -f
-# GNU copyright 1997 to 1999 by Joey Hess.
 
-# Uncomment this to turn on verbose mode.
-#export DH_VERBOSE=1
+build: build-arch build-indep
 
-ifneq (,$(findstring debug,$(DEB_BUILD_OPTIONS)))
-	CFLAGS += -g
-endif
-ifeq (,$(findstring nostrip,$(DEB_BUILD_OPTIONS)))
-	INSTALL_PROGRAM += -s
-endif
+build-indep: build-stamp
 
-build: build-stamp
+build-arch: build-stamp
 
 build-stamp:
-	dh_testdir
-	$(MAKE) CFLAGS="$(CFLAGS)"
+	$(MAKE) $(shell dpkg-buildflags --export=cmdline)
 	$(MAKE) test
 	touch build-stamp
 
 clean:
-	dh_testdir
 	rm -f build-stamp
 	rm -f unifdef
 	rm -f version.h
-	rm -f tests/*.out tests/*.err tests/*.rc
 	dh_clean
 
 install: build
-	dh_testdir
-	dh_testroot
 	dh_clean
 	dh_installdirs
 	$(MAKE) install prefix=/usr DESTDIR=$(CURDIR)/debian/unifdef
 
-# Build architecture-independent files here.
-binary-indep: build install
-# We have nothing to do by default.
+binary: binary-indep binary-arch
 
-# Build architecture-dependent files here.
+binary-indep: build install
+
 binary-arch: build install
-	dh_testdir
-	dh_testroot
 	dh_installdocs
 	dh_installchangelogs
 	dh_strip
@@ -53,5 +38,4 @@ binary-arch: build install
 	dh_md5sums
 	dh_builddeb
 
-binary: binary-indep binary-arch
-.PHONY: build clean binary-indep binary-arch binary install
+.PHONY: build build-arch build-indep clean binary-indep binary-arch binary install

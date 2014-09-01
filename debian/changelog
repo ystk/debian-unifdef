@@ -1,3 +1,9 @@
+unifdef (2.10-1) unstable; urgency=low
+
+  * New upstream release.
+
+ -- Bob Proulx <bob@proulx.com>  Wed, 22 Jan 2014 23:46:53 -0700
+
 unifdef (2.6-1) unstable; urgency=low
 
   * New upstream release.
